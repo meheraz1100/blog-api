@@ -1,20 +1,25 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PostController;
+use App\Http\Controllers\ExternalBlogController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// ১. External API (Public)
+Route::get('/external-blogs', [ExternalBlogController::class, 'showInWeb'])->name('external.blogs');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// ২. সকল ইউজারের পোস্টের ফিড (Public Home Page)
+Route::get('/', [PostController::class, 'allPosts'])->name('home');
+Route::get('/all-blogs', [PostController::class, 'allPosts'])->name('blogs.all');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+// ৩. Protected Routes (লগইন করা ইউজারদের জন্য)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/my-blogs', [PostController::class, 'myPosts'])->name('blogs.my');
+
+    Route::post('/my-blogs/store', [PostController::class, 'store'])
+        ->name('blogs.store');
+
+    Route::delete('/posts/{post}', [PostController::class, 'destroy'])
+        ->name('blogs.destroy');
 });
 
 require __DIR__.'/auth.php';

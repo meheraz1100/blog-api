@@ -1,12 +1,18 @@
-@extends('layouts.app')
+<x-public-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('External API Blogs') }}
+        </h2>
+    </x-slot>
 
-@section('title', 'External Blogs')
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">External API Blogs</h1>
 
-@section('content')
-    <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">External API Blogs</h1>
-
-    <div id="externalPostsList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <p class="text-center text-gray-500 col-span-2">Loading posts from JSONPlaceholder API...</p>
+            <div id="externalPostsList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <p class="text-center text-gray-500 col-span-2">Loading posts from JSONPlaceholder API...</p>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -35,4 +41,4 @@
 
         fetchExternalPosts();
     </script>
-@endsection
+</x-public-layout>

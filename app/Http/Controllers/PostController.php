@@ -2,106 +2,68 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Post;
+use App\Models\Post; 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PostController extends Controller
 {
-    // ১. সব পোস্ট দেখানোর জন্য (GET)
-    public function index()
+
+    public function allPosts()
     {
-        $posts = Post::all();
-        return response()->json([
-            'status' => true,
-            'data' => $posts
-        ], 200);
+        
+        $posts = Post::with('user')->latest()->get();
+        return view('posts.all', compact('posts'));
     }
 
-    // ২. নতুন পোস্ট তৈরি করার জন্য (POST)
-    public function store(Request $request)
-    {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-        ]);
 
-        $post = Post::create([
-            'title' => $request->title,
-            'content' => $request->content,
-        ]);
+ public function myPosts()
+{
+    ([
+        'auth_check' => Auth::check(),
+        'auth_id' => Auth::id(),
+        'user' => Auth::user(),
+    ]);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Post Created Successfully!',
-            'data' => $post
-        ], 201);
-    }
+    $posts = auth()->user()->posts()->latest()->get();
 
-    // ৩. নির্দিষ্ট একটি পোস্ট দেখানোর জন্য (GET)
-    public function show(Post $post)
-    {
-        return response()->json([
-            'status' => true,
-            'data' => $post
-        ], 200);
-    }
+    return view('posts.my-blogs', compact('posts'));
+}
 
-    // ৪. পোস্ট আপডেট করার জন্য (PUT/PATCH)
-    public function update(Request $request, Post $post)
-    {
-        $request->validate([
-            'title' => 'sometimes|required|string|max:255',
-            'content' => 'sometimes|required|string',
-        ]);
+public function store(Request $request)
+{
+    ([
+    'url' => request()->fullUrl(),
+    'host' => request()->getHost(),
+    'session_id' => session()->getId(),
+    'session_data' => session()->all(),
+    'auth_check' => Auth::check(),
+    'auth_id' => Auth::id(),
+]);
 
-        $post->update($request->only(['title', 'content']));
+    $request->validate([
+        'title' => 'required|string|max:255',
+        'content' => 'required|string',
+    ]);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Post Updated Successfully!',
-            'data' => $post
-        ], 200);
-    }
+    Auth::user()->posts()->create([
+        'title' => $request->title,
+        'content' => $request->content,
+    ]);
 
-    // ৫. পোস্ট ডিলিট করার জন্য (DELETE)
+    return redirect()
+        ->route('blogs.my')
+        ->with('success', 'Blog published successfully!');
+}
+
+
     public function destroy(Post $post)
     {
-        $post->delete();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Post Deleted Successfully!'
-        ], 200);
-    }
-    public function importExternalPost($id)
-    {
-        $response = Http::get("https://jsonplaceholder.typicode.com/posts/{$id}");
-
-        if ($response->successful()) {
-            $externalPost = $response->json();
-
-            // নিজস্ব ডাটাবেসে সেভ করা
-            $myPost = Post::create([
-                'title'   => $externalPost['title'],
-                'content' => $externalPost['body'],
-            ]);
-
-            return response()->json([
-                'status'  => true,
-                'message' => 'Post imported into local database!',
-                'data'    => $myPost
-            ], 201);
+        if ($post->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
         }
 
-        return response()->json(['status' => false, 'message' => 'Import failed'], 400);
-    }
-    public function showUi()
-    {
-        return view('blog-app');
-    }
-    // External ব্লগ দেখানোর পেজ
-    public function showExternal()
-    {
-        return view('external-blogs');
+        $post->delete();
+        return redirect()->back()->with('success', 'Post deleted successfully!');
     }
 }
